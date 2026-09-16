@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>Vòng Quay Gọi Tên Học Sinh</title>
     <meta name="description" content="Ứng dụng quay số gọi tên học sinh ngẫu nhiên cho giáo viên, tùy chỉnh thời gian quay và loại trừ học sinh đã gọi. Tác giả: Lê Phước Tường" />
     <meta property="og:title" content="Vòng Quay Gọi Tên Học Sinh" />
@@ -663,84 +664,203 @@
           } catch (e) {}
         }
 
-        // Standard Vietnamese Male voice player
-        let currentAudioSource = null;
-        let currentHtmlAudio = null;
+        // --- 3. SPEECH SYNTHESIS & VIETNAMESE MALE VOICE ENGINE ---
+        let currentAudio = null;
+        let activeUtterance = null;
+        let availableVoices = [];
+
+        function loadAvailableVoices() {
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            try {
+              availableVoices = window.speechSynthesis.getVoices() || [];
+            } catch (e) {}
+          }
+        }
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          loadAvailableVoices();
+          window.speechSynthesis.onvoiceschanged = loadAvailableVoices;
+        }
+
+        // Preload/buffer audio for winner ahead of spin completion
+        let primedWinnerAudio = null;
+
+        function prepareWinnerVoice(studentName) {
+          if (!state.enableVoice || !studentName) return;
+          try {
+            const cleanName = studentName.trim();
+            const textToSpeak = `Chúc mừng bạn ${cleanName}!`;
+            
+            // Build audio object
+            const audio = new Audio();
+            audio.preload = 'auto';
+            if ('preservesPitch' in audio) {
+              audio.preservesPitch = false;
+            } else if ('webkitPreservesPitch' in audio) {
+              audio.webkitPreservesPitch = false;
+            } else if ('mozPreservesPitch' in audio) {
+              audio.mozPreservesPitch = false;
+            }
+            audio.playbackRate = 0.88; // Lowers pitch into a natural, warm male baritone voice
+
+            const isHttp = window.location.protocol.startsWith('http');
+            const primaryUrl = isHttp 
+              ? `/api/tts?text=${encodeURIComponent(textToSpeak)}` 
+              : `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(textToSpeak)}`;
+            const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(textToSpeak)}`;
+
+            audio.src = primaryUrl;
+            audio.onerror = () => {
+              if (audio.src !== fallbackUrl) {
+                audio.src = fallbackUrl;
+                audio.load();
+              }
+            };
+            audio.load();
+            primedWinnerAudio = { audio, textToSpeak };
+          } catch (e) {
+            console.warn('Cannot preload audio', e);
+          }
+        }
 
         async function playVietnameseMaleVoice(text) {
           if (!text || !state.enableVoice) return;
 
-          if (currentAudioSource) {
-            try { currentAudioSource.stop(); } catch (e) {}
-            currentAudioSource = null;
-          }
-          if (currentHtmlAudio) {
-            currentHtmlAudio.pause();
-            currentHtmlAudio = null;
+          // Stop previous audio if playing
+          if (currentAudio) {
+            try {
+              currentAudio.pause();
+              currentAudio.currentTime = 0;
+            } catch (e) {}
+            currentAudio = null;
           }
           if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
+            try {
+              window.speechSynthesis.cancel();
+            } catch (e) {}
           }
 
-          const ctx = getAudioContext();
-
-          // Tier 1: Try server TTS endpoint with male DSP acoustic tuning
-          try {
-            const apiUrl = `/api/tts?text=${encodeURIComponent(text)}`;
-            const res = await fetch(apiUrl);
-            if (res.ok) {
-              const arrayBuffer = await res.arrayBuffer();
-              if (ctx && arrayBuffer.byteLength > 0) {
-                const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-                const source = ctx.createBufferSource();
-                source.buffer = audioBuffer;
-                // Baritone pitch shift for male voice
-                source.playbackRate.setValueAtTime(0.88, ctx.currentTime);
-
-                // Low-shelf male chest resonance filter
-                const chestFilter = ctx.createBiquadFilter();
-                chestFilter.type = 'lowshelf';
-                chestFilter.frequency.setValueAtTime(220, ctx.currentTime);
-                chestFilter.gain.setValueAtTime(3.5, ctx.currentTime);
-
-                const gainNode = ctx.createGain();
-                gainNode.gain.setValueAtTime(1.15, ctx.currentTime);
-
-                source.connect(chestFilter);
-                chestFilter.connect(gainNode);
-                gainNode.connect(ctx.destination);
-
-                currentAudioSource = source;
-                source.start(0);
-                return;
-              }
+          const cleanText = text.trim();
+          
+          // Check if we have a primed audio ready for this exact text
+          if (primedWinnerAudio && primedWinnerAudio.textToSpeak === cleanText && primedWinnerAudio.audio) {
+            try {
+              const audio = primedWinnerAudio.audio;
+              currentAudio = audio;
+              primedWinnerAudio = null;
+              await audio.play();
+              return;
+            } catch (err) {
+              console.warn('Primed audio playback error, falling back:', err);
             }
-          } catch (err) {}
+          }
 
-          // Tier 2: HTML5 audio stream
+          // Tier 1: Try playing high-quality Google TTS audio stream (male pitch shifted via preservesPitch=false)
           try {
-            const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
-            audio.playbackRate = 0.9;
-            currentHtmlAudio = audio;
-            await audio.play();
-            return;
-          } catch (err) {}
+            const isHttp = window.location.protocol.startsWith('http');
+            const primaryUrl = isHttp 
+              ? `/api/tts?text=${encodeURIComponent(cleanText)}` 
+              : `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+            const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
 
-          // Tier 3: Browser SpeechSynthesis fallback
+            const audio = new Audio();
+            if ('preservesPitch' in audio) {
+              audio.preservesPitch = false;
+            } else if ('webkitPreservesPitch' in audio) {
+              audio.webkitPreservesPitch = false;
+            } else if ('mozPreservesPitch' in audio) {
+              audio.mozPreservesPitch = false;
+            }
+            audio.playbackRate = 0.88; // Natural male baritone voice
+
+            currentAudio = audio;
+
+            const played = await new Promise((resolve) => {
+              let resolved = false;
+              const finish = (val) => {
+                if (!resolved) {
+                  resolved = true;
+                  resolve(val);
+                }
+              };
+
+              audio.onended = () => finish(true);
+              audio.onplaying = () => finish(true);
+              audio.onerror = async () => {
+                if (audio.src !== directUrl) {
+                  try {
+                    const fallbackAudio = new Audio(directUrl);
+                    if ('preservesPitch' in fallbackAudio) fallbackAudio.preservesPitch = false;
+                    fallbackAudio.playbackRate = 0.88;
+                    currentAudio = fallbackAudio;
+                    await fallbackAudio.play();
+                    finish(true);
+                    return;
+                  } catch (e) {}
+                }
+                finish(false);
+              };
+              
+              audio.src = primaryUrl;
+              audio.play().catch(async () => {
+                // Try direct URL if primary fails or blocked
+                try {
+                  const fallbackAudio = new Audio(directUrl);
+                  if ('preservesPitch' in fallbackAudio) fallbackAudio.preservesPitch = false;
+                  fallbackAudio.playbackRate = 0.88;
+                  currentAudio = fallbackAudio;
+                  await fallbackAudio.play();
+                  finish(true);
+                } catch (e) {
+                  finish(false);
+                }
+              });
+            });
+
+            if (played) return;
+          } catch (err) {
+            console.warn('Online TTS audio failed, trying speech synthesis:', err);
+          }
+
+          // Tier 2: Browser SpeechSynthesis fallback (works offline or when online audio is blocked)
           try {
             if ('speechSynthesis' in window) {
-              const utterance = new SpeechSynthesisUtterance(text);
+              if (availableVoices.length === 0) {
+                availableVoices = window.speechSynthesis.getVoices() || [];
+              }
+
+              const utterance = new SpeechSynthesisUtterance(cleanText);
               utterance.lang = 'vi-VN';
               utterance.rate = 0.90;
-              utterance.pitch = 0.80; // Baritone
+              utterance.pitch = 0.80; // Baritone male pitch
               utterance.volume = 1.0;
 
-              const voices = window.speechSynthesis.getVoices() || [];
-              const viVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('vi'));
-              if (viVoice) utterance.voice = viVoice;
+              // Find best Vietnamese voice
+              const viVoices = availableVoices.filter(v => {
+                const lang = (v.lang || '').toLowerCase();
+                return lang.startsWith('vi') || lang.includes('vn');
+              });
+
+              if (viVoices.length > 0) {
+                const maleVi = viVoices.find(v => {
+                  const name = (v.name || '').toLowerCase();
+                  return name.includes('nam') || name.includes('male') || name.includes('minh') || name.includes('đức') || name.includes('duc');
+                });
+                utterance.voice = maleVi || viVoices[0];
+              }
+
+              // Fix Chrome speech synthesis garbage-collection bug:
+              activeUtterance = utterance;
+              utterance.onend = () => { activeUtterance = null; };
+              utterance.onerror = () => { activeUtterance = null; };
+
+              if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+              }
               window.speechSynthesis.speak(utterance);
             }
-          } catch (err) {}
+          } catch (speechErr) {
+            console.error('Speech synthesis also failed:', speechErr);
+          }
         }
 
         // --- 4. CONFETTI GENERATOR (100% VANILLA CANVAS) ---
@@ -901,6 +1021,8 @@
           const students = state.students;
           const total = students.length;
           const targetIndex = Math.floor(Math.random() * total);
+          const winnerName = students[targetIndex];
+          prepareWinnerVoice(winnerName);
           const arc = (Math.PI * 2) / total;
 
           // The indicator is at top: angle 270 deg (3 * Math.PI / 2)
@@ -958,6 +1080,7 @@
           const students = state.students;
           const targetIndex = Math.floor(Math.random() * students.length);
           const winnerName = students[targetIndex];
+          prepareWinnerVoice(winnerName);
           const display = document.getElementById('slot-name-display');
 
           const durationMs = state.spinDuration * 1000;
@@ -1252,9 +1375,24 @@
         document.getElementById('btn-toggle-voice').addEventListener('click', toggleVoice);
         document.getElementById('btn-text-voice-toggle').addEventListener('click', toggleVoice);
 
-        document.getElementById('btn-test-male-voice').addEventListener('click', (e) => {
+        const btnTestVoice = document.getElementById('btn-test-male-voice');
+        btnTestVoice.addEventListener('click', async (e) => {
           e.stopPropagation();
-          playVietnameseMaleVoice('Xin chào thầy cô và các em học sinh. Đây là giọng đọc nam chuẩn Tiếng Việt.');
+          const originalHTML = btnTestVoice.innerHTML;
+          btnTestVoice.innerHTML = `
+            <span class="inline-block w-2 h-2 rounded-full bg-indigo-700 animate-ping"></span>
+            <span>Đang đọc...</span>
+          `;
+          btnTestVoice.disabled = true;
+
+          try {
+            await playVietnameseMaleVoice('Xin chào thầy cô và các em học sinh. Đây là giọng đọc nam chuẩn Tiếng Việt.');
+          } finally {
+            setTimeout(() => {
+              btnTestVoice.innerHTML = originalHTML;
+              btnTestVoice.disabled = false;
+            }, 2500);
+          }
         });
 
         // Fullscreen toggle
