@@ -856,21 +856,7 @@
               if (window.speechSynthesis.paused) {
                 window.speechSynthesis.resume();
               }
-              window.speechSynthesis.speak(utterance); // Tạo đối tượng đọc văn bản
-const utterance = new SpeechSynthesisUtterance(tenHocSinh);
-
-// Bắt buộc khai báo mã ngôn ngữ Tiếng Việt
-utterance.lang = 'vi-VN'; 
-
-// Tự động tìm giọng đọc Tiếng Việt có sẵn trên máy/trình duyệt
-const voices = window.speechSynthesis.getVoices();
-const viVoice = voices.find(voice => voice.lang.includes('vi') || voice.lang.includes('VI'));
-if (viVoice) {
-    utterance.voice = viVoice;
-}
-
-// Thực hiện đọc
-window.speechSynthesis.speak(utterance);
+              window.speechSynthesis.speak(utterance);
             }
           } catch (speechErr) {
             console.error('Speech synthesis also failed:', speechErr);
