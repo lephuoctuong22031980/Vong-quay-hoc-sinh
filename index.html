@@ -4,18 +4,1372 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vòng Quay Gọi Tên Học Sinh</title>
-    <meta name="description" content="Ứng dụng quay số gọi tên học sinh ngẫu nhiên cho giáo viên, tùy chỉnh thời gian quay và loại trừ học sinh đã gọi." />
+    <meta name="description" content="Ứng dụng quay số gọi tên học sinh ngẫu nhiên cho giáo viên, tùy chỉnh thời gian quay và loại trừ học sinh đã gọi. Tác giả: Lê Phước Tường" />
     <meta property="og:title" content="Vòng Quay Gọi Tên Học Sinh" />
-    <meta property="og:description" content="Ứng dụng quay số gọi tên học sinh ngẫu nhiên cho giáo viên, tùy chỉnh thời gian quay và loại trừ học sinh đã gọi." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:description" content="Ứng dụng quay số gọi tên học sinh ngẫu nhiên cho giáo viên. Tác giả: Lê Phước Tường" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Be Vietnam Pro"', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Be Vietnam Pro', sans-serif;
+        user-select: none;
+      }
+      @keyframes neon-glow-pulse {
+        0%, 100% {
+          text-shadow: 0 0 4px #22d3ee, 0 0 8px #06b6d4, 0 0 16px #0891b2;
+          box-shadow: 0 0 8px rgba(6, 182, 212, 0.8), 0 0 18px rgba(6, 182, 212, 0.5), inset 0 0 6px rgba(6, 182, 212, 0.4);
+          border-color: #38bdf8;
+        }
+        50% {
+          text-shadow: 0 0 2px #22d3ee, 0 0 5px #06b6d4;
+          box-shadow: 0 0 4px rgba(6, 182, 212, 0.5), 0 0 10px rgba(6, 182, 212, 0.3), inset 0 0 3px rgba(6, 182, 212, 0.2);
+          border-color: #7dd3fc;
+        }
+      }
+      .neon-author-badge {
+        animation: neon-glow-pulse 2.4s infinite ease-in-out;
+      }
+      @keyframes modal-pop {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .animate-pop {
+        animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
   </head>
-  <body class="font-['Be_Vietnam_Pro',sans-serif] bg-slate-50 text-slate-800 antialiased selection:bg-amber-200 selection:text-amber-900">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
+
+    <!-- HEADER -->
+    <header class="w-full bg-white/95 backdrop-blur border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <!-- Left: Brand / Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-rose-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900">
+                Gọi Tên Học Sinh
+              </h1>
+              <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-extrabold uppercase tracking-wide">
+                Lớp học sôi nổi
+              </span>
+            </div>
+            <!-- Dòng tác giả nổi bật với hiệu ứng Neon -->
+            <div class="flex items-center gap-2 mt-1">
+              <div
+                id="author-ai-neon"
+                class="neon-author-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950 text-cyan-300 border border-cyan-400 font-extrabold text-[11px] tracking-wide select-none cursor-default"
+              >
+                <svg class="w-3 h-3 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                <span class="font-black">Tác giả: Lê Phước Tường</span>
+              </div>
+              <p class="hidden md:inline text-xs text-slate-500">
+                • Vòng quay ngẫu nhiên & công bằng cho giáo viên
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Mode switcher -->
+        <div class="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
+          <button
+            id="btn-mode-wheel"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs"
+          >
+            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a10 10 0 0 1 10 10M12 12l7-7" />
+            </svg>
+            <span>Vòng quay</span>
+          </button>
+          <button
+            id="btn-mode-slot"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Hộp thần tốc</span>
+          </button>
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-open-list-modal"
+            class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-sm shadow-indigo-200 transition-all active:scale-95 cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span>Nhập danh sách</span>
+            <span id="header-student-count" class="px-1.5 py-0.5 rounded-md bg-indigo-500 text-[11px] font-extrabold">32</span>
+          </button>
+
+          <button
+            id="btn-toggle-fullscreen"
+            class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-2xs cursor-pointer"
+            title="Toàn màn hình"
+          >
+            <svg id="icon-fullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT / CENTER AREA: WHEEL OR SLOT -->
+      <section class="lg:col-span-8 flex flex-col items-center justify-center bg-white rounded-3xl p-4 sm:p-8 shadow-sm border border-slate-200/80 min-h-[580px] relative overflow-hidden">
+        
+        <!-- WHEEL VIEW -->
+        <div id="view-wheel" class="w-full flex flex-col items-center justify-center">
+          <div class="relative flex items-center justify-center">
+            <!-- Top Pointer Indicator -->
+            <div class="absolute -top-3 z-20 flex flex-col items-center pointer-events-none drop-shadow-md">
+              <div class="w-7 h-9 bg-rose-600 rounded-b-md shadow-lg flex items-center justify-center text-white" style="clip-path: polygon(0% 0%, 100% 0%, 50% 100%);"></div>
+              <div class="w-3 h-3 bg-amber-400 rounded-full -mt-7 border-2 border-white shadow-xs"></div>
+            </div>
+
+            <!-- Canvas Wheel -->
+            <canvas id="wheel-canvas" width="460" height="460" class="max-w-full aspect-square drop-shadow-xl rounded-full transition-transform"></canvas>
+
+            <!-- Center SPIN Button -->
+            <button
+              id="btn-spin-wheel"
+              class="absolute z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-black text-lg sm:text-xl shadow-xl shadow-rose-500/40 border-4 border-white flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            >
+              <span>QUAY</span>
+              <span class="text-[9px] font-bold text-amber-100 uppercase tracking-tighter">Bấm đây</span>
+            </button>
+          </div>
+
+          <p class="mt-4 text-xs text-slate-600 font-medium flex items-center gap-1.5">
+            <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded-md font-mono text-[11px] shadow-2xs">Phím Space</kbd>
+            hoặc bấm nút tròn chính giữa để quay
+          </p>
+        </div>
+
+        <!-- SLOT ROLLER VIEW -->
+        <div id="view-slot" class="w-full hidden flex-col items-center justify-center py-6">
+          <div class="w-full max-w-md bg-gradient-to-b from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-indigo-400/40 relative overflow-hidden flex flex-col items-center">
+            <!-- Decorative Lights -->
+            <div class="flex justify-between w-full mb-4 px-2">
+              <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+              <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span class="w-3 h-3 rounded-full bg-rose-400 animate-ping"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+
+            <div class="text-xs uppercase font-extrabold tracking-widest text-amber-400 mb-2">Hộp Gọi Tên Thần Tốc</div>
+
+            <!-- Slot Reel Window -->
+            <div class="w-full h-32 bg-slate-950/90 rounded-2xl border-2 border-indigo-300/40 shadow-inner flex items-center justify-center overflow-hidden relative my-2 px-4">
+              <div class="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-slate-950 to-transparent pointer-events-none z-10"></div>
+              <div class="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none z-10"></div>
+              <div class="absolute inset-y-0 left-2 w-1.5 bg-rose-500/80 rounded-full"></div>
+              <div class="absolute inset-y-0 right-2 w-1.5 bg-rose-500/80 rounded-full"></div>
+
+              <div id="slot-name-display" class="text-2xl sm:text-3xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-white to-cyan-300 drop-shadow-md">
+                Sẵn sàng...
+              </div>
+            </div>
+
+            <!-- Slot Spin Button -->
+            <button
+              id="btn-spin-slot"
+              class="w-full mt-6 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 text-white font-black text-lg tracking-wide shadow-lg shadow-rose-500/30 hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>CHỌN NGẪU NHIÊN</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: SETTINGS & CALLED LIST -->
+      <aside class="lg:col-span-4 flex flex-col gap-6">
+        
+        <!-- SPIN CONTROLS / SETTINGS -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col gap-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="2" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
+              </svg>
+              <span>Tùy Chọn Vòng Quay</span>
+            </h2>
+          </div>
+
+          <!-- Spin Duration -->
+          <div class="flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-700">Thời gian quay:</label>
+              <span id="label-duration-seconds" class="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs">
+                5 giây
+              </span>
+            </div>
+
+            <!-- Presets -->
+            <div class="grid grid-cols-4 gap-1.5">
+              <button data-duration="3" class="btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all border-slate-200 text-slate-600 hover:bg-slate-50">3s</button>
+              <button data-duration="5" class="btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all bg-indigo-600 text-white border-indigo-600 shadow-xs">5s</button>
+              <button data-duration="8" class="btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all border-slate-200 text-slate-600 hover:bg-slate-50">8s</button>
+              <button data-duration="10" class="btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all border-slate-200 text-slate-600 hover:bg-slate-50">10s</button>
+            </div>
+
+            <!-- Slider -->
+            <input
+              id="slider-duration"
+              type="range"
+              min="1"
+              max="20"
+              value="5"
+              class="w-full accent-indigo-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none"
+            />
+          </div>
+
+          <!-- Elimination Toggle -->
+          <div class="border-t border-slate-100 pt-3 flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-700">Luật loại trừ:</label>
+            <button
+              id="btn-toggle-auto-eliminate"
+              class="flex items-start gap-3 p-3 rounded-2xl border text-left transition-all bg-emerald-50 border-emerald-300 text-emerald-950 cursor-pointer"
+            >
+              <div id="box-auto-eliminate" class="mt-0.5 text-emerald-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs font-bold">Tự động loại sau khi gọi</span>
+                <span class="text-[11px] text-slate-500">Tránh gọi lặp lại bạn đã trúng</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Sound & Voice Controls -->
+          <div class="border-t border-slate-100 pt-3 flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-700">Âm thanh & Đọc tên:</label>
+
+            <!-- Sound Toggle -->
+            <button
+              id="btn-toggle-sound"
+              class="flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-indigo-50 border-indigo-200 text-indigo-900 cursor-pointer"
+            >
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <span>Âm thanh vòng quay</span>
+              </div>
+              <span id="text-sound-status" class="font-bold">BẬT</span>
+            </button>
+
+            <!-- Voice Toggle & Preview -->
+            <div
+              id="card-voice"
+              class="flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-indigo-50 border-indigo-300 text-indigo-900"
+            >
+              <button
+                id="btn-toggle-voice"
+                type="button"
+                class="flex items-center gap-2 flex-1 text-left cursor-pointer"
+                title="Bật/Tắt giọng đọc Tiếng Việt chuẩn nam"
+              >
+                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+                <div class="flex flex-col">
+                  <span>Đọc tên: Giọng Nam chuẩn</span>
+                  <span class="text-[10px] text-slate-500 font-normal">Trầm ấm, rõ chữ tiếng Việt</span>
+                </div>
+              </button>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  id="btn-test-male-voice"
+                  type="button"
+                  class="px-2 py-0.5 rounded-lg bg-indigo-200/80 hover:bg-indigo-300 text-indigo-900 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Nghe thử giọng đọc nam chuẩn"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <circle cx="12" cy="12" r="10" stroke-width="2" />
+                  </svg>
+                  <span>Nghe thử</span>
+                </button>
+                <button
+                  id="btn-text-voice-toggle"
+                  type="button"
+                  class="font-bold cursor-pointer ml-1 text-indigo-700"
+                >
+                  BẬT
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CALLED STUDENTS LIST -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col gap-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="font-black text-slate-900 text-sm flex items-center gap-2">
+                <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>Học sinh đã gọi</span>
+              </h3>
+              <p id="label-called-count" class="text-[11px] text-slate-600 mt-0.5">0 / 32 bạn</p>
+            </div>
+
+            <button
+              id="btn-restore-all"
+              class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+              title="Đưa tất cả học sinh đã gọi trở lại vòng quay"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Khôi phục</span>
+            </button>
+          </div>
+
+          <!-- List container -->
+          <div id="container-called-list" class="max-h-56 overflow-y-auto pr-1 flex flex-col gap-1.5">
+            <!-- Populated via JS -->
+            <div class="py-8 text-center text-xs text-slate-600 italic">
+              Chưa có bạn nào được gọi
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full bg-white border-t border-slate-200 py-3 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-600 flex flex-wrap items-center justify-center gap-2">
+        <span>Vòng Quay Gọi Tên Học Sinh • Ứng dụng lớp học trực quan</span>
+        <span>—</span>
+        <span class="font-bold text-slate-700">Tác giả: Lê Phước Tường</span>
+      </div>
+    </footer>
+
+    <!-- MODAL: WINNER CELEBRATION -->
+    <div id="modal-winner" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-4 border-amber-300 text-center relative overflow-hidden animate-pop">
+        <!-- Confetti canvas embedded -->
+        <canvas id="canvas-confetti" class="absolute inset-0 pointer-events-none w-full h-full"></canvas>
+
+        <div class="relative z-10">
+          <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 mx-auto flex items-center justify-center mb-3 shadow-inner">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+
+          <h3 class="text-xs uppercase font-extrabold tracking-widest text-amber-600">CHÚC MỪNG HỌC SINH MAY MẮN</h3>
+
+          <!-- Big Name Display -->
+          <div class="my-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-rose-50 to-indigo-50 border border-amber-200/80 flex items-center justify-center gap-3">
+            <span id="winner-name-text" class="text-2xl sm:text-3xl font-black text-slate-900 break-words">
+              Nguyễn Văn An
+            </span>
+            <button
+              id="btn-speak-winner-again"
+              class="p-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 transition-colors shadow-2xs cursor-pointer shrink-0"
+              title="Nghe lại giọng nam chuẩn đọc tên"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+          </div>
+
+          <p id="winner-eliminate-tip" class="text-xs text-slate-500 mb-6">
+            Học sinh này đã được chuyển sang danh sách đã gọi để tránh trùng lặp.
+          </p>
+
+          <!-- Action buttons -->
+          <div class="flex flex-col sm:flex-row items-center gap-2.5">
+            <button
+              id="btn-winner-keep-student"
+              class="w-full sm:w-1/2 py-3 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+            >
+              Giữ lại bạn này
+            </button>
+            <button
+              id="btn-winner-spin-next"
+              class="w-full sm:w-1/2 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-black text-xs sm:text-sm shadow-md shadow-rose-200 hover:opacity-95 transition-all cursor-pointer"
+            >
+              Quay tiếp bạn khác
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: STUDENT INPUT & MANAGER -->
+    <div id="modal-students" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col animate-pop">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-black text-slate-900 text-base">Danh Sách Học Sinh</h3>
+              <p class="text-xs text-slate-500">Dán từ Excel, Word hoặc chọn mẫu có sẵn</p>
+            </div>
+          </div>
+
+          <button id="btn-close-students-modal" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Tab Selection -->
+        <div class="flex items-center gap-2 mt-4 p-1 bg-slate-100 rounded-xl">
+          <button id="tab-custom-list" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-2xs">
+            Tự nhập / Dán tên
+          </button>
+          <button id="tab-sample-classes" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
+            Chọn mẫu lớp có sẵn
+          </button>
+        </div>
+
+        <!-- Tab 1 Body: Textarea -->
+        <div id="content-custom-tab" class="flex-1 flex flex-col gap-3 mt-3 overflow-hidden">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-500">Nhập mỗi học sinh trên một dòng:</span>
+            <span id="label-textarea-count" class="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">32 học sinh</span>
+          </div>
+
+          <textarea
+            id="textarea-students"
+            rows="8"
+            class="w-full p-3.5 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-sans text-sm text-slate-800 resize-none outline-hidden"
+            placeholder="Dán danh sách vào đây...&#10;Nguyễn Văn An&#10;Trần Thị Bích&#10;Lê Hoàng Cường"
+          ></textarea>
+
+          <!-- Tools -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button id="btn-sort-az" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
+              A-Z
+            </button>
+            <button id="btn-shuffle-names" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
+              Trộn ngẫu nhiên
+            </button>
+            <button id="btn-clear-names" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-700 text-xs font-bold transition-colors">
+              Xóa hết
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 2 Body: Samples -->
+        <div id="content-sample-tab" class="flex-1 flex flex-col gap-2.5 mt-3 hidden">
+          <p class="text-xs text-slate-500">Bấm để tải nhanh danh sách học sinh mẫu:</p>
+          <div class="flex flex-col gap-2">
+            <button data-sample="12A1" class="btn-load-sample p-3 rounded-2xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-left transition-all">
+              <div class="font-bold text-slate-800 text-xs sm:text-sm">Lớp 12A1 (32 học sinh)</div>
+              <div class="text-[11px] text-slate-500">Đầy đủ nam nữ, danh sách chuẩn lớp học</div>
+            </button>
+            <button data-sample="Group10" class="btn-load-sample p-3 rounded-2xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-left transition-all">
+              <div class="font-bold text-slate-800 text-xs sm:text-sm">Nhóm Thuyết Trình / Khởi Động (10 bạn)</div>
+              <div class="text-[11px] text-slate-500">Phù hợp hoạt động nhóm nhanh</div>
+            </button>
+            <button data-sample="Quiz15" class="btn-load-sample p-3 rounded-2xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-left transition-all">
+              <div class="font-bold text-slate-800 text-xs sm:text-sm">Bảng Cửu Chương / Đố Vui (15 bạn)</div>
+              <div class="text-[11px] text-slate-500">Dành cho phần kiểm tra bài cũ</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button id="btn-cancel-students" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50">
+            Hủy
+          </button>
+          <button id="btn-save-students" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all">
+            Áp dụng vào vòng quay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+      (function() {
+        // --- 1. DEFAULT DATA ---
+        const SAMPLE_CLASSES = {
+          '12A1': [
+            'Nguyễn Văn An', 'Trần Thị Bích', 'Lê Hoàng Cường', 'Phạm Thu Dung',
+            'Vũ Đức Duy', 'Đặng Ngọc Duyên', 'Hoàng Minh Giang', 'Bùi Thúy Hà',
+            'Đỗ Văn Hải', 'Ngô Thị Hạnh', 'Dương Đình Hiếu', 'Võ Thanh Hương',
+            'Lý Quốc Huy', 'Mai Trọng Khang', 'Trịnh Mai Linh', 'Lương Thế Long',
+            'Đinh Phương Mai', 'Hồ Gia Nam', 'Phan Thị Nga', 'Cao Văn Nhân',
+            'Lâm Bảo Ngọc', 'Tô Hoài Phong', 'Chu Khánh Quỳnh', 'Tạ Hữu Sang',
+            'Thái Ngọc Sơn', 'Đoàn Thúy Trang', 'Kiều Anh Tuấn', 'Lưu Diệu Uyên',
+            'Nguyễn Hữu Việt', 'Vương Hồng Vũ', 'Đào Hải Yến', 'Tống Gia Bảo'
+          ],
+          'Group10': [
+            'Nguyễn Gia Hân', 'Trần Minh Khôi', 'Lê Bảo Nam', 'Phạm Quỳnh Anh',
+            'Hoàng Đức Anh', 'Vũ Phương Linh', 'Đặng Tuấn Kiệt', 'Bùi Ngọc Diệp',
+            'Đỗ Thanh Tùng', 'Ngô Bảo Châu'
+          ],
+          'Quiz15': [
+            'Nguyễn Quốc Huy', 'Trần Mai Anh', 'Lê Tuấn Hưng', 'Phạm Hồng Hạnh',
+            'Vũ Quang Minh', 'Đặng Thùy Dương', 'Hoàng Nhật Nam', 'Bùi Trọng Tín',
+            'Đỗ Quỳnh Nga', 'Ngô Hải Đăng', 'Dương Khánh Ly', 'Võ Đình Trọng',
+            'Mai Lan Anh', 'Trịnh Minh Triết', 'Lương Thị Hà'
+          ]
+        };
+
+        const WHEEL_COLORS = [
+          '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+          '#EC4899', '#06B6D4', '#14B8A6', '#F97316', '#6366F1'
+        ];
+
+        // --- 2. STATE MANAGEMENT & PERSISTENCE ---
+        const STORAGE_KEY = 'vong_quay_hoc_sinh_data_v2';
+        let state = {
+          students: [...SAMPLE_CLASSES['12A1']],
+          calledStudents: [],
+          spinDuration: 5,
+          autoEliminate: true,
+          enableSound: true,
+          enableVoice: true,
+          mode: 'wheel' // 'wheel' | 'slot'
+        };
+
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            state = { ...state, ...parsed };
+          }
+        } catch (e) {
+          console.warn('Cannot read localStorage', e);
+        }
+
+        function saveState() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          } catch (e) {}
+        }
+
+        // --- 3. WEB AUDIO & SPEECH SYNTHESIS ENGINE ---
+        let audioCtx = null;
+        function getAudioContext() {
+          if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+          }
+          return audioCtx;
+        }
+
+        function playTickSound(pitch = 1.0) {
+          if (!state.enableSound) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(450 * pitch, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.04);
+          } catch (e) {}
+        }
+
+        function playFanfareSound() {
+          if (!state.enableSound) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.value = freq;
+              const startTime = ctx.currentTime + idx * 0.12;
+              gain.gain.setValueAtTime(0.001, startTime);
+              gain.gain.linearRampToValueAtTime(0.2, startTime + 0.04);
+              gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(startTime);
+              osc.stop(startTime + 0.5);
+            });
+          } catch (e) {}
+        }
+
+        // Standard Vietnamese Male voice player
+        let currentAudioSource = null;
+        let currentHtmlAudio = null;
+
+        async function playVietnameseMaleVoice(text) {
+          if (!text || !state.enableVoice) return;
+
+          if (currentAudioSource) {
+            try { currentAudioSource.stop(); } catch (e) {}
+            currentAudioSource = null;
+          }
+          if (currentHtmlAudio) {
+            currentHtmlAudio.pause();
+            currentHtmlAudio = null;
+          }
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+
+          const ctx = getAudioContext();
+
+          // Tier 1: Try server TTS endpoint with male DSP acoustic tuning
+          try {
+            const apiUrl = `/api/tts?text=${encodeURIComponent(text)}`;
+            const res = await fetch(apiUrl);
+            if (res.ok) {
+              const arrayBuffer = await res.arrayBuffer();
+              if (ctx && arrayBuffer.byteLength > 0) {
+                const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+                const source = ctx.createBufferSource();
+                source.buffer = audioBuffer;
+                // Baritone pitch shift for male voice
+                source.playbackRate.setValueAtTime(0.88, ctx.currentTime);
+
+                // Low-shelf male chest resonance filter
+                const chestFilter = ctx.createBiquadFilter();
+                chestFilter.type = 'lowshelf';
+                chestFilter.frequency.setValueAtTime(220, ctx.currentTime);
+                chestFilter.gain.setValueAtTime(3.5, ctx.currentTime);
+
+                const gainNode = ctx.createGain();
+                gainNode.gain.setValueAtTime(1.15, ctx.currentTime);
+
+                source.connect(chestFilter);
+                chestFilter.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                currentAudioSource = source;
+                source.start(0);
+                return;
+              }
+            }
+          } catch (err) {}
+
+          // Tier 2: HTML5 audio stream
+          try {
+            const audio = new Audio(`/api/tts?text=${encodeURIComponent(text)}`);
+            audio.playbackRate = 0.9;
+            currentHtmlAudio = audio;
+            await audio.play();
+            return;
+          } catch (err) {}
+
+          // Tier 3: Browser SpeechSynthesis fallback
+          try {
+            if ('speechSynthesis' in window) {
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = 'vi-VN';
+              utterance.rate = 0.90;
+              utterance.pitch = 0.80; // Baritone
+              utterance.volume = 1.0;
+
+              const voices = window.speechSynthesis.getVoices() || [];
+              const viVoice = voices.find(v => (v.lang || '').toLowerCase().startsWith('vi'));
+              if (viVoice) utterance.voice = viVoice;
+              window.speechSynthesis.speak(utterance);
+            }
+          } catch (err) {}
+        }
+
+        // --- 4. CONFETTI GENERATOR (100% VANILLA CANVAS) ---
+        let confettiAnimationId = null;
+        function runConfetti() {
+          const canvas = document.getElementById('canvas-confetti');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = canvas.parentElement.clientHeight;
+
+          const particles = [];
+          const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+          for (let i = 0; i < 80; i++) {
+            particles.push({
+              x: canvas.width / 2,
+              y: canvas.height / 2,
+              vx: (Math.random() - 0.5) * 14,
+              vy: (Math.random() - 0.7) * 16,
+              size: Math.random() * 8 + 4,
+              color: colors[Math.floor(Math.random() * colors.length)],
+              rotation: Math.random() * 360,
+              vRotation: (Math.random() - 0.5) * 10,
+              alpha: 1
+            });
+          }
+
+          if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+
+          function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = false;
+            particles.forEach(p => {
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.35; // gravity
+              p.rotation += p.vRotation;
+              p.alpha -= 0.008;
+
+              if (p.alpha > 0) {
+                alive = true;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                ctx.restore();
+              }
+            });
+
+            if (alive) {
+              confettiAnimationId = requestAnimationFrame(render);
+            }
+          }
+          render();
+        }
+
+        // --- 5. WHEEL CANVAS ENGINE ---
+        const canvas = document.getElementById('wheel-canvas');
+        const ctx = canvas.getContext('2d');
+        let currentRotation = 0; // in radians
+        let isSpinning = false;
+        let lastTickAngle = 0;
+
+        function drawWheel() {
+          const size = canvas.width;
+          const center = size / 2;
+          const radius = center - 12;
+          const students = state.students;
+          const total = students.length;
+
+          ctx.clearRect(0, 0, size, size);
+
+          if (total === 0) {
+            // Empty wheel state
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#E2E8F0';
+            ctx.fill();
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.stroke();
+
+            ctx.fillStyle = '#64748B';
+            ctx.font = 'bold 16px "Be Vietnam Pro", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Chưa có học sinh', center, center);
+            return;
+          }
+
+          const arc = (Math.PI * 2) / total;
+
+          // Outer shadow rim
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(center, center, radius + 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#0F172A';
+          ctx.fill();
+          ctx.restore();
+
+          // Slices
+          students.forEach((name, i) => {
+            const angle = currentRotation + i * arc;
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.arc(center, center, radius, angle, angle + arc);
+            ctx.closePath();
+            ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.stroke();
+
+            // Text rendering
+            ctx.save();
+            ctx.translate(center, center);
+            ctx.rotate(angle + arc / 2);
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#FFFFFF';
+            
+            // Adjust font size based on slice count
+            let fontSize = 14;
+            if (total > 25) fontSize = 11;
+            else if (total > 15) fontSize = 12;
+            ctx.font = `bold ${fontSize}px "Be Vietnam Pro", sans-serif`;
+
+            // Max text width
+            let displayName = name;
+            if (displayName.length > 18) {
+              displayName = displayName.substring(0, 16) + '...';
+            }
+            ctx.fillText(displayName, radius - 20, 0);
+            ctx.restore();
+          });
+
+          // Outer decorative dots
+          const dotCount = Math.min(36, Math.max(16, total * 2));
+          for (let d = 0; d < dotCount; d++) {
+            const dotAngle = (d * (Math.PI * 2)) / dotCount;
+            const dotX = center + Math.cos(dotAngle) * (radius + 2);
+            const dotY = center + Math.sin(dotAngle) * (radius + 2);
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#FDE047';
+            ctx.fill();
+          }
+        }
+
+        // Physics Easing & Deceleration
+        function spinWheel() {
+          if (isSpinning || state.students.length === 0) return;
+          getAudioContext();
+          isSpinning = true;
+
+          const students = state.students;
+          const total = students.length;
+          const targetIndex = Math.floor(Math.random() * total);
+          const arc = (Math.PI * 2) / total;
+
+          // The indicator is at top: angle 270 deg (3 * Math.PI / 2)
+          const targetSliceAngle = targetIndex * arc + arc / 2;
+          const targetRotation = (3 * Math.PI) / 2 - targetSliceAngle;
+
+          // Add extra spins based on duration
+          const extraTurns = Math.floor(state.spinDuration * 2.2) + 4;
+          const finalRotation = currentRotation + (Math.PI * 2 * extraTurns) + (targetRotation - (currentRotation % (Math.PI * 2)));
+
+          const startRotation = currentRotation;
+          const totalDelta = finalRotation - startRotation;
+          const startTime = performance.now();
+          const durationMs = state.spinDuration * 1000;
+
+          // Easing: easeOutCubic
+          function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+          }
+
+          function animate(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / durationMs);
+            const eased = easeOutCubic(progress);
+
+            currentRotation = startRotation + totalDelta * eased;
+
+            // Tick sound trigger on slice crossing
+            const currentSlicePos = Math.floor((currentRotation / arc));
+            if (currentSlicePos !== lastTickAngle) {
+              playTickSound(1.0 + (progress * 0.4));
+              lastTickAngle = currentSlicePos;
+            }
+
+            drawWheel();
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              isSpinning = false;
+              onWinnerSelected(students[targetIndex], targetIndex);
+            }
+          }
+
+          requestAnimationFrame(animate);
+        }
+
+        // --- 6. SLOT ROLLER ENGINE ---
+        let slotInterval = null;
+        function spinSlot() {
+          if (isSpinning || state.students.length === 0) return;
+          getAudioContext();
+          isSpinning = true;
+
+          const students = state.students;
+          const targetIndex = Math.floor(Math.random() * students.length);
+          const winnerName = students[targetIndex];
+          const display = document.getElementById('slot-name-display');
+
+          const durationMs = state.spinDuration * 1000;
+          const startTime = performance.now();
+          let speed = 40; // ms per name switch
+
+          function cycle() {
+            const elapsed = performance.now() - startTime;
+            const progress = elapsed / durationMs;
+
+            const randomStudent = students[Math.floor(Math.random() * students.length)];
+            display.textContent = randomStudent;
+            playTickSound(1.2);
+
+            if (progress < 0.7) {
+              speed = 50;
+            } else if (progress < 0.9) {
+              speed = 120;
+            } else {
+              speed = 250;
+            }
+
+            if (progress < 1) {
+              setTimeout(cycle, speed);
+            } else {
+              display.textContent = winnerName;
+              isSpinning = false;
+              onWinnerSelected(winnerName, targetIndex);
+            }
+          }
+          cycle();
+        }
+
+        // --- 7. WINNER CELEBRATION & ACTIONS ---
+        let lastWinner = null;
+        let lastWinnerIndex = -1;
+
+        function onWinnerSelected(name, index) {
+          lastWinner = name;
+          lastWinnerIndex = index;
+
+          // Confetti & Fanfare
+          playFanfareSound();
+          setTimeout(() => {
+            runConfetti();
+          }, 100);
+
+          // Show modal
+          document.getElementById('winner-name-text').textContent = name;
+          document.getElementById('modal-winner').classList.remove('hidden');
+
+          const tip = document.getElementById('winner-eliminate-tip');
+          if (state.autoEliminate) {
+            tip.textContent = 'Học sinh này đã được tự động loại khỏi vòng quay để tránh trùng lặp.';
+            // Eliminate from active students, add to called list
+            state.students = state.students.filter(s => s !== name);
+            state.calledStudents.unshift(name);
+            saveState();
+            updateUI();
+          } else {
+            tip.textContent = 'Chế độ tự động loại đang TẮT. Thầy/cô có thể chọn giữ lại hoặc loại bạn này.';
+          }
+
+          // Read name with standard Vietnamese male voice
+          setTimeout(() => {
+            playVietnameseMaleVoice(`Chúc mừng bạn ${name}!`);
+          }, 350);
+        }
+
+        // Winner Modal button handlers
+        document.getElementById('btn-winner-spin-next').addEventListener('click', () => {
+          document.getElementById('modal-winner').classList.add('hidden');
+        });
+
+        document.getElementById('btn-winner-keep-student').addEventListener('click', () => {
+          document.getElementById('modal-winner').classList.add('hidden');
+          if (state.autoEliminate && lastWinner) {
+            // Restore student back to active list
+            state.calledStudents = state.calledStudents.filter(s => s !== lastWinner);
+            if (!state.students.includes(lastWinner)) {
+              state.students.push(lastWinner);
+            }
+            saveState();
+            updateUI();
+          }
+        });
+
+        document.getElementById('btn-speak-winner-again').addEventListener('click', () => {
+          if (lastWinner) {
+            playVietnameseMaleVoice(`Chúc mừng bạn ${lastWinner}!`);
+          }
+        });
+
+        // --- 8. UI UPDATES & EVENT LISTENERS ---
+        function updateUI() {
+          // Header count
+          document.getElementById('header-student-count').textContent = state.students.length;
+          
+          // Sidebar duration label
+          document.getElementById('label-duration-seconds').textContent = `${state.spinDuration} giây`;
+          document.getElementById('slider-duration').value = state.spinDuration;
+
+          // Duration preset active states
+          document.querySelectorAll('.btn-duration-preset').forEach(btn => {
+            const d = parseInt(btn.getAttribute('data-duration'), 10);
+            if (d === state.spinDuration) {
+              btn.className = 'btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all bg-indigo-600 text-white border-indigo-600 shadow-xs';
+            } else {
+              btn.className = 'btn-duration-preset py-1.5 rounded-xl border text-xs font-bold transition-all border-slate-200 text-slate-600 hover:bg-slate-50';
+            }
+          });
+
+          // Auto eliminate button
+          const btnEliminate = document.getElementById('btn-toggle-auto-eliminate');
+          const boxEliminate = document.getElementById('box-auto-eliminate');
+          if (state.autoEliminate) {
+            btnEliminate.className = 'flex items-start gap-3 p-3 rounded-2xl border text-left transition-all bg-emerald-50 border-emerald-300 text-emerald-950 cursor-pointer';
+            boxEliminate.innerHTML = '<svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+          } else {
+            btnEliminate.className = 'flex items-start gap-3 p-3 rounded-2xl border text-left transition-all bg-slate-50 border-slate-200 text-slate-500 cursor-pointer';
+            boxEliminate.innerHTML = '<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2" /></svg>';
+          }
+
+          // Sound toggle
+          const btnSound = document.getElementById('btn-toggle-sound');
+          const textSound = document.getElementById('text-sound-status');
+          if (state.enableSound) {
+            btnSound.className = 'flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-indigo-50 border-indigo-200 text-indigo-900 cursor-pointer';
+            textSound.textContent = 'BẬT';
+          } else {
+            btnSound.className = 'flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-slate-50 border-slate-200 text-slate-500 cursor-pointer';
+            textSound.textContent = 'TẮT';
+          }
+
+          // Voice toggle
+          const cardVoice = document.getElementById('card-voice');
+          const textVoice = document.getElementById('btn-text-voice-toggle');
+          const btnTestVoice = document.getElementById('btn-test-male-voice');
+          if (state.enableVoice) {
+            cardVoice.className = 'flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-indigo-50 border-indigo-300 text-indigo-900';
+            textVoice.textContent = 'BẬT';
+            btnTestVoice.style.display = 'flex';
+          } else {
+            cardVoice.className = 'flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all bg-slate-50 border-slate-200 text-slate-500';
+            textVoice.textContent = 'TẮT';
+            btnTestVoice.style.display = 'none';
+          }
+
+          // Mode toggle views
+          const viewWheel = document.getElementById('view-wheel');
+          const viewSlot = document.getElementById('view-slot');
+          const btnModeWheel = document.getElementById('btn-mode-wheel');
+          const btnModeSlot = document.getElementById('btn-mode-slot');
+          if (state.mode === 'wheel') {
+            viewWheel.classList.remove('hidden');
+            viewSlot.classList.add('hidden');
+            btnModeWheel.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs';
+            btnModeSlot.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+          } else {
+            viewWheel.classList.add('hidden');
+            viewSlot.classList.remove('hidden');
+            btnModeSlot.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs';
+            btnModeWheel.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+          }
+
+          // Called list render
+          renderCalledList();
+
+          // Redraw Wheel
+          drawWheel();
+        }
+
+        function renderCalledList() {
+          const container = document.getElementById('container-called-list');
+          const countLabel = document.getElementById('label-called-count');
+          const totalCount = state.students.length + state.calledStudents.length;
+
+          countLabel.textContent = `${state.calledStudents.length} / ${totalCount} bạn`;
+
+          if (state.calledStudents.length === 0) {
+            container.innerHTML = '<div class="py-8 text-center text-xs text-slate-400 italic">Chưa có bạn nào được gọi</div>';
+            return;
+          }
+
+          container.innerHTML = '';
+          state.calledStudents.forEach((student, index) => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs transition-colors';
+            item.innerHTML = `
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
+                  ${index + 1}
+                </span>
+                <span class="font-medium text-slate-800 truncate">${student}</span>
+              </div>
+              <button data-student="${student}" class="btn-restore-single text-[11px] text-indigo-600 hover:text-indigo-800 font-bold px-2 py-0.5 rounded-lg hover:bg-indigo-50 cursor-pointer">
+                Thêm lại
+              </button>
+            `;
+            container.appendChild(item);
+          });
+
+          // Add listener to individual restore buttons
+          container.querySelectorAll('.btn-restore-single').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const name = btn.getAttribute('data-student');
+              restoreStudent(name);
+            });
+          });
+        }
+
+        function restoreStudent(name) {
+          state.calledStudents = state.calledStudents.filter(s => s !== name);
+          if (!state.students.includes(name)) {
+            state.students.push(name);
+          }
+          saveState();
+          updateUI();
+        }
+
+        // Restore all
+        document.getElementById('btn-restore-all').addEventListener('click', () => {
+          if (state.calledStudents.length === 0) return;
+          state.calledStudents.forEach(s => {
+            if (!state.students.includes(s)) state.students.push(s);
+          });
+          state.calledStudents = [];
+          saveState();
+          updateUI();
+        });
+
+        // Trigger Spin Handlers
+        document.getElementById('btn-spin-wheel').addEventListener('click', spinWheel);
+        document.getElementById('btn-spin-slot').addEventListener('click', spinSlot);
+
+        // Spacebar shortcut
+        window.addEventListener('keydown', (e) => {
+          if (e.code === 'Space' && !['TEXTAREA', 'INPUT'].includes(e.target.tagName)) {
+            e.preventDefault();
+            if (state.mode === 'wheel') spinWheel();
+            else spinSlot();
+          } else if (e.code === 'Escape') {
+            document.getElementById('modal-students').classList.add('hidden');
+            document.getElementById('modal-winner').classList.add('hidden');
+          }
+        });
+
+        // Mode switcher handlers
+        document.getElementById('btn-mode-wheel').addEventListener('click', () => {
+          state.mode = 'wheel';
+          saveState();
+          updateUI();
+        });
+        document.getElementById('btn-mode-slot').addEventListener('click', () => {
+          state.mode = 'slot';
+          saveState();
+          updateUI();
+        });
+
+        // Settings toggles
+        document.querySelectorAll('.btn-duration-preset').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.spinDuration = parseInt(btn.getAttribute('data-duration'), 10);
+            saveState();
+            updateUI();
+          });
+        });
+
+        document.getElementById('slider-duration').addEventListener('input', (e) => {
+          state.spinDuration = parseInt(e.target.value, 10);
+          saveState();
+          updateUI();
+        });
+
+        document.getElementById('btn-toggle-auto-eliminate').addEventListener('click', () => {
+          state.autoEliminate = !state.autoEliminate;
+          saveState();
+          updateUI();
+        });
+
+        document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+          state.enableSound = !state.enableSound;
+          saveState();
+          updateUI();
+        });
+
+        function toggleVoice() {
+          state.enableVoice = !state.enableVoice;
+          saveState();
+          updateUI();
+        }
+        document.getElementById('btn-toggle-voice').addEventListener('click', toggleVoice);
+        document.getElementById('btn-text-voice-toggle').addEventListener('click', toggleVoice);
+
+        document.getElementById('btn-test-male-voice').addEventListener('click', (e) => {
+          e.stopPropagation();
+          playVietnameseMaleVoice('Xin chào thầy cô và các em học sinh. Đây là giọng đọc nam chuẩn Tiếng Việt.');
+        });
+
+        // Fullscreen toggle
+        document.getElementById('btn-toggle-fullscreen').addEventListener('click', () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        });
+
+        // --- 9. STUDENT MANAGER MODAL ---
+        const modalStudents = document.getElementById('modal-students');
+        const textarea = document.getElementById('textarea-students');
+
+        document.getElementById('btn-open-list-modal').addEventListener('click', () => {
+          textarea.value = state.students.join('\n');
+          document.getElementById('label-textarea-count').textContent = `${state.students.length} học sinh`;
+          modalStudents.classList.remove('hidden');
+        });
+
+        document.getElementById('btn-close-students-modal').addEventListener('click', () => {
+          modalStudents.classList.add('hidden');
+        });
+        document.getElementById('btn-cancel-students').addEventListener('click', () => {
+          modalStudents.classList.add('hidden');
+        });
+
+        textarea.addEventListener('input', () => {
+          const lines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+          document.getElementById('label-textarea-count').textContent = `${lines.length} học sinh`;
+        });
+
+        // Tabs in modal
+        const tabCustom = document.getElementById('tab-custom-list');
+        const tabSample = document.getElementById('tab-sample-classes');
+        const contentCustom = document.getElementById('content-custom-tab');
+        const contentSample = document.getElementById('content-sample-tab');
+
+        tabCustom.addEventListener('click', () => {
+          tabCustom.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-2xs';
+          tabSample.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+          contentCustom.classList.remove('hidden');
+          contentSample.classList.add('hidden');
+        });
+
+        tabSample.addEventListener('click', () => {
+          tabSample.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-2xs';
+          tabCustom.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+          contentSample.classList.remove('hidden');
+          contentCustom.classList.add('hidden');
+        });
+
+        // Tools
+        document.getElementById('btn-clear-names').addEventListener('click', () => {
+          textarea.value = '';
+          document.getElementById('label-textarea-count').textContent = '0 học sinh';
+        });
+
+        document.getElementById('btn-sort-az').addEventListener('click', () => {
+          const lines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+          lines.sort((a, b) => a.localeCompare(b, 'vi'));
+          textarea.value = lines.join('\n');
+        });
+
+        document.getElementById('btn-shuffle-names').addEventListener('click', () => {
+          const lines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+          for (let i = lines.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [lines[i], lines[j]] = [lines[j], lines[i]];
+          }
+          textarea.value = lines.join('\n');
+        });
+
+        // Load sample classes
+        document.querySelectorAll('.btn-load-sample').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sampleKey = btn.getAttribute('data-sample');
+            if (SAMPLE_CLASSES[sampleKey]) {
+              textarea.value = SAMPLE_CLASSES[sampleKey].join('\n');
+              document.getElementById('label-textarea-count').textContent = `${SAMPLE_CLASSES[sampleKey].length} học sinh`;
+              // Switch back to custom tab to view
+              tabCustom.click();
+            }
+          });
+        });
+
+        // Save students
+        document.getElementById('btn-save-students').addEventListener('click', () => {
+          const cleaned = textarea.value
+            .split('\n')
+            .map(line => line.replace(/^\d+[\.\)\-\s]+/, '').trim())
+            .filter(Boolean);
+
+          if (cleaned.length === 0) {
+            alert('Vui lòng nhập ít nhất 1 tên học sinh!');
+            return;
+          }
+
+          state.students = cleaned;
+          // Clean called students that no longer exist
+          state.calledStudents = state.calledStudents.filter(s => cleaned.includes(s));
+          saveState();
+          updateUI();
+          modalStudents.classList.add('hidden');
+        });
+
+        // Initialize UI on load
+        updateUI();
+
+        // Responsive canvas sizing
+        window.addEventListener('resize', () => {
+          drawWheel();
+        });
+      })();
+    </script>
   </body>
 </html>
-
